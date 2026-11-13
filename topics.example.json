@@ -1,0 +1,30 @@
+[
+  {
+    "id": "my-topic",
+    "name": "（主题名称）",
+    "enabled": false,
+
+    "purpose": "（你为什么关注这类信息、你是谁、要拿它做什么。越具体，AI 判断越准）",
+    "queries": ["（搜索词 1）", "（搜索词 2）"],
+    "sources_hint": ["（建议 AI 去看的网站或网站类型）"],
+    "watchlist": [{"name": "（每次都要打开看的网站）", "url": "https://example.org/"}],
+    "feeds": [],
+    "judge": "（什么样的值得推、什么样的不要；high / medium / low 各是什么标准）",
+
+    "cron": "40 8 * * 1",
+    "timezone": "UTC",
+    "layout": "cards",
+    "max_items": 8,
+    "points": [
+      {"key": "point1", "label": "（要点 1 的显示名）", "hint": "（可选：告诉 AI 这一项怎么写）"},
+      {"key": "point2", "label": "（要点 2 的显示名）"}
+    ],
+    "buttons": ["⭐ 感兴趣", "✖ 不需要", "✔ 已处理"],
+
+    "ai": {"mode": "api", "provider": "anthropic", "model": "claude-opus-5-5", "web_search": true, "max_searches": 8},
+
+    "share_to_group": false,
+    "share_button": false,
+    "deep_dive": false
+  }
+]

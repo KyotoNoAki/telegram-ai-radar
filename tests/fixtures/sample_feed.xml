@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 测试用样例数据：全部虚构，域名都是 example.org / example.com。 -->
+<rss version="2.0"><channel>
+  <title>样例资讯汇总</title>
+  <item>
+    <title>Open Notebook 2.0 正式发布：离线笔记工具</title>
+    <link>https://notebook.example.org/blog/2-0?utm_source=rss&amp;utm_medium=feed</link>
+    <description>&lt;p&gt;开源的离线笔记工具发布 2.0，支持多设备同步。&lt;/p&gt;</description>
+    <pubDate>Mon, 02 Nov 2026 09:00:00 +0000</pubDate>
+  </item>
+  <item>
+    <title>Sample Weekly Tools Roundup</title>
+    <link>https://roundup.example.com/weekly-tools</link>
+    <description>A weekly list of new tools.</description>
+  </item>
+  <item>
+    <title>City Library Workshop: Bookbinding</title>
+    <link>https://library.example.org/events/bookbinding</link>
+    <description>A hands-on workshop.</description>
+  </item>
+  <item>
+    <title>Neighbourhood cooking contest</title>
+    <link>https://cooking.example.org/contest</link>
+    <description>Bake the best pie.</description>
+  </item>
+</channel></rss>

@@ -1,0 +1,57 @@
+name: fetch
+
+# 每天抓取所有配置了 feeds（RSS）的主题，存成 data/fetched/<topic>.json，AI 运行时直接读这份快照。
+# 有些 AI 代理平台的云端环境连不上外部网站，GitHub Action 可以，所以抓取放在这里做。
+# 单个源失败只在运行摘要里显示警告，不会让任务失败。时间按需要改（这里是 UTC 每天 21:05）。
+on:
+  schedule:
+    - cron: "5 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radar-fetch
+  cancel-in-progress: false
+
+jobs:
+  # 这个系统会把资料库（你的标记、推送记录）提交回仓库，所以默认只在私有仓库运行。
+  # 确实要在公开仓库运行：在 Settings → Secrets and variables → Actions → Variables 里设 ALLOW_PUBLIC_REPO=true
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      ok: ${{ steps.guard.outputs.ok }}
+    steps:
+      - id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALLOW: ${{ vars.ALLOW_PUBLIC_REPO }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = "true" ] || [ "$ALLOW" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=已跳过::这是公开仓库，为了不把你的资料库公开，工作流不运行。请复制到私有仓库使用（见 README）"
+          fi
+
+  run:
+    needs: check
+    if: needs.check.outputs.ok == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      INTEL_TZ: ${{ vars.INTEL_TZ }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fetch feeds
+        run: python3 -m intel fetch-all
+      - name: Commit
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data/fetched
+          git diff --cached --quiet && exit 0
+          git commit -m "radar: fetch $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1

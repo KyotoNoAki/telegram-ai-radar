@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 测试用样例数据（Atom）：第一条和 sample_feed.xml 的第一条是同一个页面（网址只差 www 和追踪参数）。 -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>样例 Atom 源</title>
+  <entry>
+    <title>Open Notebook 2.0 正式发布：离线笔记工具</title>
+    <link rel="alternate" href="https://www.notebook.example.org/blog/2-0/?utm_campaign=x"/>
+    <summary>重复的条目。</summary>
+    <updated>2026-11-02T09:00:00Z</updated>
+  </entry>
+  <entry>
+    <title>Sample Grant for Independent Tool Makers</title>
+    <link rel="alternate" href="https://grants.example.org/tool-makers"/>
+    <summary>A small grant for independent developers.</summary>
+    <updated>2026-11-01T00:00:00Z</updated>
+  </entry>
+</feed>

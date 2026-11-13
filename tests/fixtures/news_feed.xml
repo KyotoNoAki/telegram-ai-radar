@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 测试用样例数据：一条相关、两条无关（用来测试排除词）。全部虚构。 -->
+<rss version="2.0"><channel>
+  <title>样例新闻</title>
+  <item>
+    <title>Small museum opens a new photography wing</title>
+    <link>https://news.example.org/museum-photography</link>
+    <description>A local museum expands.</description>
+  </item>
+  <item>
+    <title>Football club wins the regional cup</title>
+    <link>https://news.example.org/football-cup</link>
+    <description>Match results.</description>
+  </item>
+  <item>
+    <title>Celebrity gossip of the week</title>
+    <link>https://news.example.org/gossip</link>
+    <description>Sports star and celebrity rumours.</description>
+  </item>
+</channel></rss>

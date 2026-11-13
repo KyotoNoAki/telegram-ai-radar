@@ -1,0 +1,67 @@
+name: run
+
+# 方案 B：直接调用 AI 接口的主题（topics.json 里 "ai": {"mode": "api"} 且写了 "cron"）。
+# 每小时检查一次哪些主题到点了，运行它们、发送推送、提交资料库。
+# GitHub 的定时常有延迟；到点判断会补上延迟的那次，同一个时间点只运行一次（记录在 data/runs.json）。
+# 和 deliver 共用同一个排队组，避免两边同时发送同一批消息。
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radar-deliver
+  cancel-in-progress: false
+
+jobs:
+  # 这个系统会把资料库（你的标记、推送记录）提交回仓库，所以默认只在私有仓库运行。
+  # 确实要在公开仓库运行：在 Settings → Secrets and variables → Actions → Variables 里设 ALLOW_PUBLIC_REPO=true
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      ok: ${{ steps.guard.outputs.ok }}
+    steps:
+      - id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALLOW: ${{ vars.ALLOW_PUBLIC_REPO }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = "true" ] || [ "$ALLOW" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=已跳过::这是公开仓库，为了不把你的资料库公开，工作流不运行。请复制到私有仓库使用（见 README）"
+          fi
+
+  run:
+    needs: check
+    if: needs.check.outputs.ok == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_TEAM_GROUP_ID: ${{ secrets.TELEGRAM_TEAM_GROUP_ID }}
+      INTEL_TZ: ${{ vars.INTEL_TZ }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run due topics
+        run: python3 -m intel run-due
+      - name: Deliver
+        run: python3 -m intel deliver
+      - name: Commit
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet && exit 0
+          git commit -m "radar: run $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1

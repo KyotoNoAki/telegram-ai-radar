@@ -1,0 +1,30 @@
+name: forward-test
+
+# 手动运行：把各主题最近发出的汇报转发到群里，测试群能不能收到。不带按钮，不改资料库，不提交任何东西。
+# chat_id 留空时用 Secret TELEGRAM_TEAM_GROUP_ID。群已升级为超级群组时，日志会给出新的 chat_id。
+on:
+  workflow_dispatch:
+    inputs:
+      chat_id:
+        description: "群的 chat_id（留空则用 Secret TELEGRAM_TEAM_GROUP_ID）"
+        required: false
+        default: ""
+      topics:
+        description: "要转发的主题，逗号分隔（留空则转发所有开启 share_to_group 的主题）"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      CHAT: ${{ inputs.chat_id || secrets.TELEGRAM_TEAM_GROUP_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Forward latest reports
+        run: python3 -m intel forward "$CHAT" "${{ inputs.topics }}"

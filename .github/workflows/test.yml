@@ -1,0 +1,30 @@
+name: test
+
+# 用虚构的样例数据跑整条流程，不联网、不调用 AI、不发 Telegram；另跑 Worker 的测试。
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: ["intel/**", "tests/**", "worker/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests -t . -v
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Worker tests
+        run: |
+          node tests/worker_migration.test.mjs
+          node tests/worker_share.test.mjs

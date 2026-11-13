@@ -1,0 +1,66 @@
+name: deliver
+
+# 发送汇报、同步按钮点击、导出 CSV。
+# 有新的推送进 data/outbox 时立即发送；另外每 2 小时同步一次按钮点击。
+on:
+  push:
+    branches: [main]
+    paths: ["data/outbox/**"]
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radar-deliver
+  cancel-in-progress: false
+
+jobs:
+  # 这个系统会把资料库（你的标记、推送记录）提交回仓库，所以默认只在私有仓库运行。
+  # 确实要在公开仓库运行：在 Settings → Secrets and variables → Actions → Variables 里设 ALLOW_PUBLIC_REPO=true
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      ok: ${{ steps.guard.outputs.ok }}
+    steps:
+      - id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALLOW: ${{ vars.ALLOW_PUBLIC_REPO }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = "true" ] || [ "$ALLOW" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=已跳过::这是公开仓库，为了不把你的资料库公开，工作流不运行。请复制到私有仓库使用（见 README）"
+          fi
+
+  run:
+    needs: check
+    if: needs.check.outputs.ok == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_TEAM_GROUP_ID: ${{ secrets.TELEGRAM_TEAM_GROUP_ID }}   # 团队群（可选）；不设就只发私信
+      INTEL_TZ: ${{ vars.INTEL_TZ }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Deliver reports
+        run: python3 -m intel deliver
+      - name: Sync button clicks
+        run: python3 -m intel sync
+      - name: Export
+        run: python3 -m intel export
+      - name: Commit
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data exports
+          git diff --cached --quiet && exit 0
+          git commit -m "radar: deliver/sync $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1
